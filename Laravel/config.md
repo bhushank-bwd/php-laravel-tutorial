@@ -46,7 +46,28 @@ DB_PASSWORD=
 ```php
 $mysql2Posts = DB::connection("mysql_2")->table("posts")->get();
 $mysql1Posts = DB::connection("mysql")->table("posts")->get();
+$mysql1Posts = POST::on("mysql")->get();
+$mysql1Post = new POST;
+$mysql1Post->setConnection("mysql");
+// other properties
+$mysql1Post->save();
 ```
+
+3. Dynamically Set Connection
+
+```php
+Config::set('database.connections.branch.database', $dbRow->db_name);
+Config::set('database.connections.branch.username', $dbRow->db_username);
+Config::set('database.connections.branch.password', decrypt($dbRow->db_password));
+
+DB::purge('branch');
+DB::reconnect('branch');
+DB::setDefaultConnection("branch");
+DB::connection("branch")->beginTransaction();
+DB::connection("branch")->commit();
+DB::connection("branch")->rollback();
+```
+- `branch` is key from `config\database.php` array
 
 ## MongoDB connection
 
@@ -85,7 +106,9 @@ composer require mongodb/laravel-mongodb
 ```bash
 php artisan make:model Store
 ```
+
 - use MongoDB model class
+
   ```php
   use MongoDB\Laravel\Eloquent\Model;
   class Store extends Model
@@ -93,6 +116,7 @@ php artisan make:model Store
 
     }
   ```
+
 5. CRUD
 
 ```php
