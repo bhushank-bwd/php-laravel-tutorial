@@ -55,3 +55,55 @@ php artisan migrate:rollback --path=/database/migrations/your_migration_file.php
 $table->unsignedBigInteger("role_id");
 $table->foreign("role_id")->references("id")->on("roles");
 ```
+## Get All Columns of table in database
+```php
+$tables = DB::select("
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = 'public'
+            ");
+
+$result = [];
+foreach ($tables as $table) {
+    $tableName = $table->table_name;
+    $columns = DB::table('information_schema.columns')
+        ->selectRaw("
+                    CONCAT(
+                        column_name,
+                        ' ',
+                        data_type,
+                        CASE
+                            WHEN character_maximum_length IS NOT NULL
+                            THEN '(' || character_maximum_length || ')'
+                            ELSE ''
+                        END,
+                        CASE
+                            WHEN numeric_precision IS NOT NULL
+                                AND data_type IN ('numeric', 'decimal')
+                            THEN '(' || numeric_precision || ',' || COALESCE(numeric_scale,0) || ')'
+                            ELSE ''
+                        END,
+                        CASE
+                            WHEN is_nullable = 'NO'
+                            THEN ' NOT NULL'
+                            ELSE ' NULL'
+                        END,
+                        CASE
+                            WHEN column_default IS NOT NULL
+                            THEN ' DEFAULT ' || column_default
+                            ELSE ''
+                        END
+                    ) AS column_definition
+                ")
+        ->where('table_schema', 'public')
+        ->where('table_name', $tableName)
+        ->orderBy('ordinal_position')
+        ->pluck('column_definition')
+        ->toArray();
+
+    $result[$tableName] = $columns;
+}
+
+return response()->json($result);
+```
+
